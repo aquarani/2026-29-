@@ -2,52 +2,65 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>입장 확인 - 스태프용</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <style>
-  body { font-family:sans-serif; background:#222; color:white; text-align:center; padding:20px; }
-  #reader { width:100%; max-width:400px; margin:20px auto; }
-  #status { margin-top:20px; padding:20px; border-radius:12px; font-size:1.2rem; min-height:20px; }
-  .ok { background:#2ecc71; }
-  .dup { background:#e67e22; }
-  .fail { background:#e74c3c; }
-  h2 { margin-bottom:10px; }
+body{font-family:'Pretendard',sans-serif;background:#222;color:#fff;text-align:center;padding:20px;margin:0}#app{display:none}#reader{width:100%;max-width:430px;margin:20px auto;background:#fff;color:#222}#status{max-width:430px;margin:20px auto 0;padding:20px;border-radius:12px;font-size:1.1rem;min-height:64px;display:flex;align-items:center;justify-content:center;line-height:1.5}.ok{background:#2ecc71}.dup{background:#e67e22}.fail{background:#e74c3c}.wait{background:#555}.top{max-width:430px;margin:auto;display:flex;gap:10px;justify-content:space-between;align-items:center}.top a,.top button{color:#fff;background:none;border:1px solid #777;border-radius:8px;padding:8px 10px;text-decoration:none;cursor:pointer}.small{font-size:.78rem;color:#bbb}
 </style>
 </head>
 <body>
+<div id="loading">권한 확인 중...</div>
+<div id="app">
+  <div class="top"><a href="index.html">← 홈</a><button id="logoutBtn">로그아웃</button></div>
   <h2>🎫 현장 입장 확인</h2>
+  <p class="small">QR코드를 카메라 중앙에 맞춰주세요.</p>
   <div id="reader"></div>
-  <div id="status"></div>
-
+  <div id="status" class="wait">QR코드를 스캔해주세요.</div>
+</div>
 <script src="storage.js"></script>
 <script>
-function onScanSuccess(decodedText) {
-  const p = DB.findParticipant(decodedText);
-  const status = document.getElementById("status");
+let scanLocked=false;
 
-  if (!p) {
-    status.className = "fail";
-    status.innerText = "❌ 등록되지 않은 QR입니다.";
-    return;
+async function onScanSuccess(decodedText){
+  if(scanLocked) return;
+  scanLocked=true;
+  const status=document.getElementById('status');
+  status.className='wait';status.textContent='확인 중...';
+  try{
+    const p=await DB.findParticipant(decodedText.trim());
+    if(!p){status.className='fail';status.textContent='❌ 등록되지 않은 QR입니다.';return;}
+    if(p.checked_in){status.className='dup';status.textContent='⚠️ '+p.name+'님은 이미 입장하셨습니다.';return;}
+    const updated=await DB.checkIn(p.id);
+    if(!updated){
+      const latest=await DB.findParticipant(p.id);
+      status.className=latest&&latest.checked_in?'dup':'fail';
+      status.textContent=latest&&latest.checked_in?'⚠️ 이미 입장 처리된 QR입니다.':'❌ 입장 처리에 실패했습니다.';
+      return;
+    }
+    status.className='ok';status.textContent='✅ '+p.name+'님 입장 완료!';
+  }catch(err){
+    console.error(err);status.className='fail';status.textContent='❌ 처리 중 오류가 발생했습니다. '+(err.message||'');
+  }finally{
+    setTimeout(()=>{scanLocked=false;},1800);
   }
-  if (DB.isCheckedIn(p.id)) {
-    status.className = "dup";
-    status.innerText = "⚠️ " + p.name + "님은 이미 입장하셨습니다.";
-    return;
-  }
-
-  DB.addCheckin({
-    participantId: p.id,
-    checkedInAt: new Date().toISOString()
-  });
-
-  status.className = "ok";
-  status.innerText = "✅ " + p.name + "님 입장 완료!";
 }
 
-const scanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 });
-scanner.render(onScanSuccess);
+(async()=>{
+  try{
+    const auth=await DB.requireRole(['staff','admin']);
+    if(!auth) return;
+    document.getElementById('loading').style.display='none';
+    document.getElementById('app').style.display='block';
+    const scanner=new Html5QrcodeScanner('reader',{fps:10,qrbox:{width:250,height:250}},false);
+    scanner.render(onScanSuccess,()=>{});
+  }catch(err){
+    console.error(err);alert('권한 확인 중 오류가 발생했습니다.');location.replace('login.html');
+  }
+})();
+
+document.getElementById('logoutBtn').addEventListener('click',async()=>{await DB.signOut();location.replace('login.html');});
 </script>
 </body>
 </html>

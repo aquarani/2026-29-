@@ -4,222 +4,183 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>사전등록 - 2026년 제29회 춘천시청소년문화축제</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
 <style>
-  * { box-sizing:border-box; font-family:'Pretendard', sans-serif; }
-  body { background:#fdf6f0; margin:0; padding:20px; }
-  .container { max-width:480px; margin:0 auto; background:white; border-radius:16px; padding:30px; box-shadow:0 4px 16px rgba(0,0,0,0.08); }
+  * { box-sizing:border-box; font-family:'Pretendard',sans-serif; }
+  body { background:#fdf6f0; margin:0; padding:20px; color:#333; }
+  .container { max-width:480px; margin:0 auto; background:#fff; border-radius:16px; padding:30px; box-shadow:0 4px 16px rgba(0,0,0,.08); }
   h1 { color:#ff7e5f; text-align:center; margin-bottom:24px; font-size:1.4rem; }
-  .sub { text-align:center; font-size:0.82rem; color:#999; margin-top:-16px; margin-bottom:20px; }
-  label { display:block; margin:14px 0 6px; font-weight:bold; font-size:0.9rem; }
-  input, select { width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; font-size:1rem; }
+  .sub { text-align:center; font-size:.82rem; color:#888; margin-top:-16px; margin-bottom:20px; line-height:1.5; }
+  label { display:block; margin:14px 0 6px; font-weight:700; font-size:.9rem; }
+  input,select { width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; font-size:1rem; }
+  input:focus,select:focus { outline:2px solid #ffd7ca; border-color:#ff7e5f; }
   .row { display:flex; gap:10px; }
-  .row > div { flex:1; }
-  .submit-btn {
-    width:100%; margin-top:24px; padding:16px; background:#ff7e5f; color:white;
-    border:none; border-radius:50px; font-size:1.1rem; font-weight:bold; cursor:pointer;
-  }
+  .row>div { flex:1; }
+  .submit-btn { width:100%; margin-top:24px; padding:16px; background:#ff7e5f; color:#fff; border:0; border-radius:50px; font-size:1.05rem; font-weight:700; cursor:pointer; }
   .submit-btn:disabled { background:#ddd; cursor:not-allowed; }
+  .message { margin-top:14px; padding:12px; border-radius:8px; font-size:.88rem; display:none; }
+  .message.error { display:block; background:#fff0f0; color:#b42318; }
   .result { text-align:center; margin-top:20px; }
-  .result canvas { margin-top:12px; }
-  .again-btn {
-    margin-top:16px; padding:12px 24px; background:white; color:#ff7e5f;
-    border:2px solid #ff7e5f; border-radius:50px; font-weight:bold; cursor:pointer;
-  }
+  .result canvas { margin-top:12px; max-width:100%; }
+  .qr-id { font-size:.72rem; color:#aaa; word-break:break-all; margin-top:8px; }
+  .again-btn { margin-top:16px; padding:12px 24px; background:#fff; color:#ff7e5f; border:2px solid #ff7e5f; border-radius:50px; font-weight:700; cursor:pointer; }
   .back { display:block; text-align:center; margin-top:16px; color:#999; text-decoration:none; }
-
   .consent-section { margin-top:24px; border-top:1px solid #eee; padding-top:16px; }
-  .consent-all {
-    display:flex; align-items:center; gap:8px; padding:12px; background:#fff5ee;
-    border-radius:8px; font-weight:bold; margin-bottom:10px;
-  }
+  .consent-all { display:flex; align-items:center; gap:8px; padding:12px; background:#fff5ee; border-radius:8px; font-weight:700; margin-bottom:10px; }
+  .consent-all input,.consent-header input { width:auto; }
   .consent-item { border:1px solid #eee; border-radius:8px; margin-bottom:8px; overflow:hidden; }
-  .consent-header {
-    display:flex; align-items:center; justify-content:space-between;
-    padding:10px 12px; cursor:pointer; font-size:0.88rem;
-  }
-  .consent-header label { margin:0; display:flex; align-items:center; gap:8px; font-weight:normal; }
-  .consent-header .req { color:#ff7e5f; font-size:0.75rem; margin-left:4px; }
-  .consent-header .toggle-arrow { color:#999; font-size:0.8rem; }
-  .consent-body {
-    display:none; padding:10px 14px; font-size:0.78rem; color:#777;
-    background:#fafafa; line-height:1.5; max-height:120px; overflow-y:auto;
-  }
+  .consent-header { display:flex; align-items:center; justify-content:space-between; padding:10px 12px; cursor:pointer; font-size:.88rem; }
+  .consent-header label { margin:0; display:flex; align-items:center; gap:8px; font-weight:400; }
+  .req { color:#ff7e5f; font-size:.75rem; margin-left:4px; }
+  .toggle-arrow { color:#999; font-size:.8rem; }
+  .consent-body { display:none; padding:10px 14px; font-size:.78rem; color:#666; background:#fafafa; line-height:1.55; max-height:150px; overflow:auto; }
   .consent-body.open { display:block; }
-  .consent-header input[type="checkbox"] { width:auto; }
+  @media(max-width:420px){ .row{display:block;} .container{padding:22px 18px;} }
 </style>
 </head>
 <body>
 <div class="container">
   <h1>🎟️ 축제 사전등록</h1>
-  <p class="sub">가족/친구와 함께 오시나요? 각자 QR을 받아야 정확한 통계에 반영돼요 😊</p>
+  <p class="sub">가족·친구와 함께 오시나요?<br>참가자별로 각각 등록하면 방문객 통계에 정확하게 반영됩니다.</p>
 
   <form id="regForm">
-    <label>이름</label>
-    <input type="text" id="name" required>
+    <label for="name">이름</label>
+    <input type="text" id="name" maxlength="50" autocomplete="name" required>
 
     <div class="row">
       <div>
-        <label>성별</label>
+        <label for="gender">성별</label>
         <select id="gender" required>
-          <option value="">선택</option>
-          <option>남</option><option>여</option><option>기타</option>
+          <option value="">선택</option><option value="남">남</option><option value="여">여</option><option value="기타">기타</option>
         </select>
       </div>
       <div>
-        <label>연령대</label>
+        <label for="ageGroup">연령대</label>
         <select id="ageGroup" required>
-          <option value="">선택</option>
-          <option>10대 이하</option><option>20대</option><option>30대</option>
-          <option>40대</option><option>50대</option><option>60대 이상</option>
+          <option value="">선택</option><option>10대 이하</option><option>20대</option><option>30대</option><option>40대</option><option>50대</option><option>60대 이상</option>
         </select>
       </div>
     </div>
 
     <div class="row">
-      <div>
-        <label>거주지(시/군/구)</label>
-        <input type="text" id="sido" placeholder="예: 춘천시" required>
-      </div>
-      <div>
-        <label>거주지(읍/면/동)</label>
-        <input type="text" id="sigungu" placeholder="예: 석사동" required>
-      </div>
+      <div><label for="sido">거주지(시/군/구)</label><input type="text" id="sido" maxlength="50" placeholder="예: 춘천시" required></div>
+      <div><label for="sigungu">거주지(읍/면/동)</label><input type="text" id="sigungu" maxlength="50" placeholder="예: 석사동" required></div>
     </div>
 
     <div class="consent-section">
-      <div class="consent-all">
-        <input type="checkbox" id="agreeAll">
-        <label for="agreeAll" style="margin:0;">아래 약관에 모두 동의합니다</label>
-      </div>
+      <div class="consent-all"><input type="checkbox" id="agreeAll"><label for="agreeAll" style="margin:0">아래 약관에 모두 동의합니다</label></div>
 
       <div class="consent-item">
         <div class="consent-header" onclick="toggleBody('body1')">
-          <label onclick="event.stopPropagation">
-            <input type="checkbox" class="agree-item" id="agree1" required>
-            개인정보 수집·이용 동의<span class="req">(필수)</span>
-          </label>
-          <span class="toggle-arrow" id="arrow1">▼</span>
+          <label onclick="event.stopPropagation()"><input type="checkbox" class="agree-item" id="agree1" required>개인정보 수집·이용 동의<span class="req">(필수)</span></label><span class="toggle-arrow" id="arrow1">▼</span>
         </div>
-        <div class="consent-body" id="body1">
-          수집 항목: 이름, 성별, 연령대, 거주지<br>
-          수집 목적: 축제 입장 확인 및 방문객 통계 분석<br>
-          보유 기간: 행사 종료일로부터 5년<br>
-          동의를 거부할 권리가 있으며, 거부 시 QR코드 발급 및 사전등록이 제한됩니다.
-        </div>
+        <div class="consent-body" id="body1">수집 항목: 이름, 성별, 연령대, 거주지<br>수집 목적: 축제 입장 확인 및 방문객 통계 분석<br>보유 기간: 행사 종료일로부터 5년<br>동의를 거부할 권리가 있으며, 거부 시 QR코드 발급 및 사전등록이 제한됩니다.</div>
       </div>
 
       <div class="consent-item">
         <div class="consent-header" onclick="toggleBody('body2')">
-          <label onclick="event.stopPropagation">
-            <input type="checkbox" class="agree-item" id="agree2" required>
-            제3자 제공 동의<span class="req">(필수)</span>
-          </label>
-          <span class="toggle-arrow" id="arrow2">▼</span>
+          <label onclick="event.stopPropagation()"><input type="checkbox" class="agree-item" id="agree2" required>제3자 제공 동의<span class="req">(필수)</span></label><span class="toggle-arrow" id="arrow2">▼</span>
         </div>
-        <div class="consent-body" id="body2">
-          제공받는 자: 축제 운영 위탁업체, 관할 지자체(통계 보고 목적)<br>
-          제공 항목: 성별, 연령대, 거주지, 입장 여부(비식별 통계 형태)<br>
-          제공 목적: 축제 성과 보고 및 향후 행사 기획 참고<br>
-          보유 및 이용 기간: 제공일로부터 5년, 이후 즉시 파기<br>
-          동의를 거부할 수 있으며, 거부 시 통계 연동 서비스 이용이 제한될 수 있습니다.
-        </div>
+        <div class="consent-body" id="body2">제공받는 자: 축제 운영 위탁업체, 관할 지자체(통계 보고 목적)<br>제공 항목: 성별, 연령대, 거주지, 입장 여부(비식별 통계 형태)<br>제공 목적: 축제 성과 보고 및 향후 행사 기획 참고<br>보유 및 이용 기간: 제공일로부터 5년, 이후 즉시 파기</div>
       </div>
 
       <div class="consent-item">
         <div class="consent-header" onclick="toggleBody('body3')">
-          <label onclick="event.stopPropagation">
-            <input type="checkbox" class="agree-item" id="agree3" required>
-            초상권 활용 동의<span class="req">(필수)</span>
-          </label>
-          <span class="toggle-arrow" id="arrow3">▼</span>
+          <label onclick="event.stopPropagation()"><input type="checkbox" class="agree-item" id="agree3" required>초상권 활용 동의<span class="req">(필수)</span></label><span class="toggle-arrow" id="arrow3">▼</span>
         </div>
-        <div class="consent-body" id="body3">
-          행사 현장에서 촬영된 사진·영상에 참가자의 모습이 포함될 수 있으며,
-          이를 축제 홍보(홈페이지, SNS, 보도자료 등) 목적으로 활용하는 데 동의합니다.<br>
-          활용 기간: 촬영일로부터 5년<br>
-          동의를 원치 않을 경우 현장 스태프에게 별도 요청 시 촬영에서 제외될 수 있습니다.
-        </div>
+        <div class="consent-body" id="body3">행사 현장에서 촬영된 사진·영상에 참가자의 모습이 포함될 수 있으며, 이를 축제 홍보(홈페이지, SNS, 보도자료 등) 목적으로 활용하는 데 동의합니다.<br>활용 기간: 촬영일로부터 5년</div>
       </div>
     </div>
 
+    <div id="message" class="message"></div>
     <button type="submit" class="submit-btn" id="submitBtn" disabled>등록하고 QR코드 발급받기</button>
   </form>
 
-  <div class="result" id="result" style="display:none;">
-    <p><strong id="resultName"></strong>님, 등록이 완료되었어요!</p>
+  <div class="result" id="result" style="display:none">
+    <p><strong id="resultName"></strong>님, 등록이 완료되었습니다!</p>
     <canvas id="qrCanvas"></canvas>
-    <p style="font-size:0.85rem;color:#999;margin-top:8px;">현장 입구에서 이 QR코드를 제시해주세요.</p>
-    <button class="again-btn" onclick="location.reload">👥 같이 온 분 등록하기</button>
+    <p style="font-size:.85rem;color:#777;margin-top:8px">현장 입구에서 이 QR코드를 제시해주세요.</p>
+    <p class="qr-id" id="qrId"></p>
+    <button class="again-btn" onclick="location.reload()">👥 같이 온 분 등록하기</button>
   </div>
   <a href="index.html" class="back">← 축제 홈으로</a>
 </div>
 
 <script src="storage.js"></script>
 <script>
-function toggleBody(id) {
-  const body = document.getElementById(id);
-  const arrow = document.getElementById('arrow' + id.slice(-1));
+function toggleBody(id){
+  const body=document.getElementById(id);
+  const arrow=document.getElementById('arrow'+id.slice(-1));
   body.classList.toggle('open');
-  arrow.innerText = body.classList.contains('open') ? '▲' : '▼';
+  arrow.textContent=body.classList.contains('open')?'▲':'▼';
 }
 
-const agreeAll = document.getElementById('agreeAll');
-const items = document.querySelectorAll('.agree-item');
-const submitBtn = document.getElementById('submitBtn');
+const form=document.getElementById('regForm');
+const agreeAll=document.getElementById('agreeAll');
+const items=Array.from(document.querySelectorAll('.agree-item'));
+const submitBtn=document.getElementById('submitBtn');
+const message=document.getElementById('message');
 
-function updateSubmitState() {
-  const form = document.getElementById('regForm');
-  const allChecked = Array.from(items).every(function(i) { return i.checked; });
-  submitBtn.disabled = !(allChecked && form.checkValidity());
+function updateSubmitState(){
+  const allChecked=items.every(i=>i.checked);
+  submitBtn.disabled=!(allChecked && form.checkValidity());
 }
 
-agreeAll.addEventListener('change', function() {
-  items.forEach(function(i) { i.checked = agreeAll.checked; });
-  checkAllChecked;
+agreeAll.addEventListener('change',()=>{
+  items.forEach(i=>{ i.checked=agreeAll.checked; });
+  updateSubmitState();
 });
 
-items.forEach(function(item) {
-  item.addEventListener('change', function() {
-    agreeAll.checked = Array.from(items).every(function(i) { return i.checked; });
-    updateSubmitState();
-  });
+items.forEach(item=>item.addEventListener('change',()=>{
+  agreeAll.checked=items.every(i=>i.checked);
+  updateSubmitState();
+}));
+
+form.querySelectorAll('input[required],select[required]').forEach(field=>{
+  field.addEventListener('input',updateSubmitState);
+  field.addEventListener('change',updateSubmitState);
 });
 
-document.querySelectorAll('#regForm input[required], #regForm select[required]').forEach(function(field) {
-  field.addEventListener('input', updateSubmitState);
-  field.addEventListener('change', updateSubmitState);
+form.addEventListener('submit',async(e)=>{
+  e.preventDefault();
+  if(!form.checkValidity() || !items.every(i=>i.checked)) return;
+
+  submitBtn.disabled=true;
+  submitBtn.textContent='등록 중...';
+  message.className='message';
+  message.textContent='';
+
+  const id=crypto.randomUUID();
+  const participant={
+    id,
+    name:document.getElementById('name').value,
+    gender:document.getElementById('gender').value,
+    ageGroup:document.getElementById('ageGroup').value,
+    sido:document.getElementById('sido').value,
+    sigungu:document.getElementById('sigungu').value,
+    consentPrivacy:document.getElementById('agree1').checked,
+    consentThirdParty:document.getElementById('agree2').checked,
+    consentPortrait:document.getElementById('agree3').checked
+  };
+
+  try{
+    await DB.addParticipant(participant);
+    form.style.display='none';
+    document.getElementById('result').style.display='block';
+    document.getElementById('resultName').textContent=participant.name.trim();
+    document.getElementById('qrId').textContent='등록번호: '+id;
+    new QRious({element:document.getElementById('qrCanvas'),value:id,size:220,level:'M'});
+  }catch(err){
+    console.error(err);
+    message.textContent='등록 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요. ('+(err.message||'unknown error')+')';
+    message.className='message error';
+    submitBtn.disabled=false;
+    submitBtn.textContent='등록하고 QR코드 발급받기';
+  }
 });
 
 updateSubmitState();
-
-document.getElementById('regForm').addEventListener('submit', function(e) {
-  e.preventDefault();
-  const id = 'P' + Date.now() + Math.floor(Math.random() * 1000);
-  const participant = {
-    id: id,
-    name: document.getElementById('name').value,
-    gender: document.getElementById('gender').value,
-    ageGroup: document.getElementById('ageGroup').value,
-    sido: document.getElementById('sido').value,
-    sigungu: document.getElementById('sigungu').value,
-    consentPrivacy: document.getElementById('agree1').checked,
-    consentThirdParty: document.getElementById('agree2').checked,
-    consentPortrait: document.getElementById('agree3').checked,
-    createdAt: new Date().toISOString()
-  };
-  DB.addParticipant(participant);
-
-  document.getElementById('regForm').style.display = 'none';
-  document.getElementById('result').style.display = 'block';
-  document.getElementById('resultName').innerText = participant.name;
-
-  new QRious({
-    element: document.getElementById('qrCanvas'),
-    value: id,
-    size: 220
-  });
-});
 </script>
 </body>
 </html>

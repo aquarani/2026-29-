@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>사전등록 - 2026 가을 축제</title>
+<title>사전등록 - 2026년 제29회 춘천시청소년문화축제</title>
 <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
 <style>
   * { box-sizing:border-box; font-family:'Pretendard', sans-serif; }
@@ -78,12 +78,12 @@
 
     <div class="row">
       <div>
-        <label>거주지(시/도)</label>
-        <input type="text" id="sido" placeholder="예: 서울특별시" required>
+        <label>거주지(시/군/구)</label>
+        <input type="text" id="sido" placeholder="예: 춘천시" required>
       </div>
       <div>
-        <label>거주지(시/군/구)</label>
-        <input type="text" id="sigungu" placeholder="예: 강남구" required>
+        <label>거주지(읍/면/동)</label>
+        <input type="text" id="sigungu" placeholder="예: 석사동" required>
       </div>
     </div>
 
@@ -104,7 +104,7 @@
         <div class="consent-body" id="body1">
           수집 항목: 이름, 성별, 연령대, 거주지<br>
           수집 목적: 축제 입장 확인 및 방문객 통계 분석<br>
-          보유 기간: 행사 종료일로부터 6개월<br>
+          보유 기간: 행사 종료일로부터 5년<br>
           동의를 거부할 권리가 있으며, 거부 시 QR코드 발급 및 사전등록이 제한됩니다.
         </div>
       </div>
@@ -121,7 +121,7 @@
           제공받는 자: 축제 운영 위탁업체, 관할 지자체(통계 보고 목적)<br>
           제공 항목: 성별, 연령대, 거주지, 입장 여부(비식별 통계 형태)<br>
           제공 목적: 축제 성과 보고 및 향후 행사 기획 참고<br>
-          보유 및 이용 기간: 제공일로부터 6개월, 이후 즉시 파기<br>
+          보유 및 이용 기간: 제공일로부터 5년, 이후 즉시 파기<br>
           동의를 거부할 수 있으며, 거부 시 통계 연동 서비스 이용이 제한될 수 있습니다.
         </div>
       </div>
@@ -137,7 +137,7 @@
         <div class="consent-body" id="body3">
           행사 현장에서 촬영된 사진·영상에 참가자의 모습이 포함될 수 있으며,
           이를 축제 홍보(홈페이지, SNS, 보도자료 등) 목적으로 활용하는 데 동의합니다.<br>
-          활용 기간: 촬영일로부터 1년<br>
+          활용 기간: 촬영일로부터 5년<br>
           동의를 원치 않을 경우 현장 스태프에게 별도 요청 시 촬영에서 제외될 수 있습니다.
         </div>
       </div>
@@ -168,26 +168,34 @@ const agreeAll = document.getElementById('agreeAll');
 const items = document.querySelectorAll('.agree-item');
 const submitBtn = document.getElementById('submitBtn');
 
-function checkAllChecked {
+function updateSubmitState() {
+  const form = document.getElementById('regForm');
   const allChecked = Array.from(items).every(function(i) { return i.checked; });
-  submitBtn.disabled = !allChecked;
+  submitBtn.disabled = !(allChecked && form.checkValidity());
 }
 
-agreeAll.addEventListener('change', function {
+agreeAll.addEventListener('change', function() {
   items.forEach(function(i) { i.checked = agreeAll.checked; });
   checkAllChecked;
 });
 
 items.forEach(function(item) {
-  item.addEventListener('change', function {
+  item.addEventListener('change', function() {
     agreeAll.checked = Array.from(items).every(function(i) { return i.checked; });
-    checkAllChecked;
+    updateSubmitState();
   });
 });
 
+document.querySelectorAll('#regForm input[required], #regForm select[required]').forEach(function(field) {
+  field.addEventListener('input', updateSubmitState);
+  field.addEventListener('change', updateSubmitState);
+});
+
+updateSubmitState();
+
 document.getElementById('regForm').addEventListener('submit', function(e) {
-  e.preventDefault;
-  const id = 'P' + Date.now + Math.floor(Math.random * 1000);
+  e.preventDefault();
+  const id = 'P' + Date.now() + Math.floor(Math.random() * 1000);
   const participant = {
     id: id,
     name: document.getElementById('name').value,
@@ -198,7 +206,7 @@ document.getElementById('regForm').addEventListener('submit', function(e) {
     consentPrivacy: document.getElementById('agree1').checked,
     consentThirdParty: document.getElementById('agree2').checked,
     consentPortrait: document.getElementById('agree3').checked,
-    createdAt: new Date.toISOString
+    createdAt: new Date().toISOString()
   };
   DB.addParticipant(participant);
 

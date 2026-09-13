@@ -1,24 +1,29 @@
 const DB = {
-  getParticipants {
+  getParticipants() {
     return JSON.parse(localStorage.getItem('participants') || '[]');
   },
+
   addParticipant(p) {
-    const list = this.getParticipants;
+    const list = this.getParticipants();
     list.push(p);
     localStorage.setItem('participants', JSON.stringify(list));
   },
-  getCheckins {
+
+  getCheckins() {
     return JSON.parse(localStorage.getItem('checkins') || '[]');
   },
+
   addCheckin(c) {
-    const list = this.getCheckins;
+    const list = this.getCheckins();
     list.push(c);
     localStorage.setItem('checkins', JSON.stringify(list));
   },
+
   findParticipant(id) {
-    return this.getParticipants.find(p => p.id === id);
+    return this.getParticipants().find(function(p) { return p.id === id; });
   },
+
   isCheckedIn(id) {
-    return this.getCheckins.some(c => c.participantId === id);
+    return this.getCheckins().some(function(c) { return c.participantId === id; });
   }
 };

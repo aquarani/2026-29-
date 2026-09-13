@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>관리자 대시보드 - 2026 가을 축제</title>
+<title>관리자 대시보드 - 2026년 제29회 춘천시청소년문화축제</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
   * { box-sizing:border-box; font-family:'Pretendard', sans-serif; }
@@ -45,8 +45,8 @@
 
 <script src="storage.js"></script>
 <script>
-const participants = DB.getParticipants;
-const checkins = DB.getCheckins;
+const participants = DB.getParticipants();
+const checkins = DB.getCheckins();
 const checkedInIds = checkins.map(function (c) { return c.participantId; });
 
 document.getElementById("totalReg").innerText = participants.length;

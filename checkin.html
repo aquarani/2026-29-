@@ -39,7 +39,7 @@ function onScanSuccess(decodedText) {
 
   DB.addCheckin({
     participantId: p.id,
-    checkedInAt: new Date.toISOString
+    checkedInAt: new Date().toISOString()
   });
 
   status.className = "ok";

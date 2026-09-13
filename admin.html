@@ -19,7 +19,6 @@
   th { background:#ff7e5f; color:white; }
   a.back { display:inline-block; margin-bottom:16px; color:#666; text-decoration:none; }
   .checkin-link { display:inline-block; margin-bottom:16px; margin-left:16px; color:#ff7e5f; font-weight:bold; }
-  .empty-msg { text-align:center; color:#999; padding:40px; background:white; border-radius:12px; }
 </style>
 </head>
 <body>
@@ -48,54 +47,68 @@
 <script>
 const participants = DB.getParticipants;
 const checkins = DB.getCheckins;
-const checkedInIds = checkins.map(c => c.participantId);
+const checkedInIds = checkins.map(function (c) { return c.participantId; });
 
-// ===== 상단 통계 카드 =====
-document.getElementById('totalReg').innerText = participants.length;
-document.getElementById('totalCheckin').innerText = checkins.length;
-document.getElementById('checkinRate').innerText =
-  participants.length ? Math.round((checkins.length / participants.length) * 100) + '%' : '0%';
+document.getElementById("totalReg").innerText = participants.length;
+document.getElementById("totalCheckin").innerText = checkins.length;
+document.getElementById("checkinRate").innerText =
+  participants.length
+    ? Math.round((checkins.length / participants.length) * 100) + "%"
+    : "0%";
 
-// ===== 입장 완료자만 통계 대상으로 사용 =====
-const checkedInParticipants = participants.filter(p => checkedInIds.includes(p.id));
+const checkedInParticipants = participants.filter(function (p) {
+  return checkedInIds.indexOf(p.id) !== -1;
+});
 
 function countBy(arr, key) {
   const result = {};
-  arr.forEach(item => { result[item[key]] = (result[item[key]]||0) + 1; });
+  arr.forEach(function (item) {
+    result[item[key]] = (result[item[key]] || 0) + 1;
+  });
   return result;
 }
-const genderCount = countBy(checkedInParticipants, 'gender');
-const ageCount = countBy(checkedInParticipants, 'ageGroup');
-const regionCount = countBy(checkedInParticipants, 'sido');
 
-new Chart(document.getElementById('genderChart'), {
-  type:'pie',
-  data:{ labels:Object.keys(genderCount), datasets:[{ data:Object.values(genderCount), backgroundColor:['#ff7e5f','#feb47b','#ffd8a8'] }]},
-  options:{ plugins:{ title:{ display:true, text:'성별 분포 (입장자 기준)' } } }
-});
-new Chart(document.getElementById('ageChart'), {
-  type:'bar',
-  data:{ labels:Object.keys(ageCount), datasets:[{ label:'인원', data:Object.values(ageCount), backgroundColor:'#ff7e5f' }]},
-  options:{ plugins:{ title:{ display:true, text:'연령대 분포 (입장자 기준)' } } }
-});
-new Chart(document.getElementById('regionChart'), {
-  type:'doughnut',
-  data:{ labels:Object.keys(regionCount), datasets:[{ data:Object.values(regionCount), backgroundColor:['#ff7e5f','#feb47b','#ffd8a8','#f8b195','#c06c84'] }]},
-  options:{ plugins:{ title:{ display:true, text:'거주지 분포 (입장자 기준)' } } }
+const genderCount = countBy(checkedInParticipants, "gender");
+const ageCount = countBy(checkedInParticipants, "ageGroup");
+const regionCount = countBy(checkedInParticipants, "sido");
+
+new Chart(document.getElementById("genderChart"), {
+  type: "pie",
+  data: {
+    labels: Object.keys(genderCount),
+    datasets: [{ data: Object.values(genderCount), backgroundColor: ["#ff7e5f", "#feb47b", "#ffd8a8"] }]
+  },
+  options: { plugins: { title: { display: true, text: "성별 분포 (입장자 기준)" } } }
 });
 
-// ===== 참가자 명단 테이블 =====
-const tbody = document.getElementById('tableBody');
+new Chart(document.getElementById("ageChart"), {
+  type: "bar",
+  data: {
+    labels: Object.keys(ageCount),
+    datasets: [{ label: "인원", data: Object.values(ageCount), backgroundColor: "#ff7e5f" }]
+  },
+  options: { plugins: { title: { display: true, text: "연령대 분포 (입장자 기준)" } } }
+});
+
+new Chart(document.getElementById("regionChart"), {
+  type: "doughnut",
+  data: {
+    labels: Object.keys(regionCount),
+    datasets: [{ data: Object.values(regionCount), backgroundColor: ["#ff7e5f", "#feb47b", "#ffd8a8", "#f8b195", "#c06c84"] }]
+  },
+  options: { plugins: { title: { display: true, text: "거주지 분포 (입장자 기준)" } } }
+});
+
+const tbody = document.getElementById("tableBody");
 if (participants.length === 0) {
-  tbody.innerHTML = `<tr><td colspan="5" style="padding:40px;color:#999;">아직 등록된 참가자가 없습니다.</td></tr>`;
+  tbody.innerHTML = '<tr><td colspan="5" style="padding:40px;color:#999;">아직 등록된 참가자가 없습니다.</td></tr>';
 } else {
-  participants.forEach(p => {
-    const isIn = checkedInIds.includes(p.id);
-    tbody.innerHTML += `<tr>
-      <td>${p.name}</td><td>${p.gender}</td><td>${p.ageGroup}</td>
-      <td>${p.sido} ${p.sigungu}</td>
-      <td>${isIn ? '✅ 입장' : '⏳ 미입장'}</td>
-    </tr>`;
+  participants.forEach(function (p) {
+    const isIn = checkedInIds.indexOf(p.id) !== -1;
+    tbody.innerHTML +=
+      "<tr><td>" + p.name + "</td><td>" + p.gender + "</td><td>" + p.ageGroup +
+      "</td><td>" + p.sido + " " + p.sigungu + "</td><td>" +
+      (isIn ? "✅ 입장" : "⏳ 미입장") + "</td></tr>";
   });
 }
 </script>
